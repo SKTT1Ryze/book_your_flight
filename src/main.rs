@@ -1,54 +1,73 @@
-use mysql::prelude::*;
-use mysql::*;
+//! 华中科技大学数据库系统综合实验
+//! 
+//! 机票预定系统
 
-#[derive(Debug, PartialEq, Eq)]
-struct Entry {
-    pub id: i32,
-    pub foo: i32,
-    pub bar: Option<String>
+use bevy::prelude::*;
+use std::time;
+
+struct SnakeHead;
+struct Materials {
+    head_material: Handle<ColorMaterial>,
 }
 
-fn main() -> mysql::Result<()> {
-    println!("book your flights!");
-    println!("Hello, mysql!");
-    let url = "mysql://sktt1ryze:123123@localhost/test_db";
-    let pool = Pool::new(url)?;
-    let mut conn = pool.get_conn()?;
-    conn.query_drop(
-        r"
-            create temporary table rust_tb (
-                id int not null,
-                foo int not null,
-                bar char(20)
+struct SnakeSpawnTimer(Timer);
+impl Default for SnakeSpawnTimer {
+    fn default() -> Self {
+        Self(Timer::new(time::Duration::from_millis(1000), true))
+    }
+}
+
+// Commands -> Resources -> Components -> Queries
+fn setup(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+    commands.spawn(Camera2dBundle::default());
+    commands.insert_resource(
+        Materials {
+            head_material: materials.add(Color::rgb(0.7, 0.7, 0.7).into())
+        }
+    );
+}
+
+fn game_setup(commands: &mut Commands, materials: Res<Materials>) {
+    commands.spawn(
+        SpriteBundle {
+            material: materials.head_material.clone(),
+            sprite: Sprite::new(Vec2::new(10.0, 10.0)),
+            ..Default::default()
+        }
+    ).with(SnakeHead);
+}
+
+fn snake_movement(mut snake_head: Query<(&mut SnakeHead, &mut Transform)>) {
+    for (_head, mut head_pos) in snake_head.iter_mut() {
+        head_pos.translation.x += 1.0;        
+    }
+}
+
+fn snake_spawn(
+    commands: &mut Commands,
+    materials: Res<Materials>,
+    time: Res<Time>,
+    mut timer: ResMut<SnakeSpawnTimer>,
+) {
+    timer.0.tick(time.delta_seconds());
+    if timer.0.finished() {
+        // todo
+        println!("{:?}: timer tick!", time::Instant::now());
+    }
+}
+
+fn main() {
+    println!("hello, nexys4!");
+    App::build()
+        .add_resource(
+            SnakeSpawnTimer(
+                Timer::new(time::Duration::from_millis(100. as u64), true)
             )
-        "
-    )?;
-
-    let entrys = vec![
-        Entry { id: 0, foo: 0, bar: Some("abc".into())},
-        Entry { id: 1, foo: 1, bar: Some("def".into())},
-        Entry { id: 2, foo: 2, bar: Some("ghi".into())},
-    ];
-    conn.exec_batch(
-        r"
-            insert into rust_tb (id, foo, bar)
-            values (:id, :foo, :bar)
-        ",
-        entrys.iter().map(|e| params! {
-            "id" => e.id,
-            "foo" => e.foo,
-            "bar" => &e.bar
-        })
-    )?;
-
-    let select_entry = conn
-        .query_map(
-            "select id, foo, bar from rust_tb",
-            |(id, foo, bar)| {
-                Entry {id, foo, bar}
-            }
-        )?;
-    
-    println!("select ret: {:?}", select_entry);
-    Ok(())
+        )
+        .add_startup_system(setup.system())
+        .add_startup_stage("game_setup", SystemStage::single(game_setup.system()))
+        .add_system(snake_movement.system())
+        .add_system(snake_spawn.system())
+        .add_plugins(DefaultPlugins)
+        .run();
 }
