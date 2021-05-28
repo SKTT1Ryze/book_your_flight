@@ -57,7 +57,6 @@ fn snake_spawn(
 }
 
 fn main() {
-    println!("hello, nexys4!");
     App::build()
         .add_resource(
             SnakeSpawnTimer(
