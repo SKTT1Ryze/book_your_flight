@@ -4,17 +4,17 @@ use super::SqlEntry;
 #[derive(Debug)]
 pub struct Flight {
     /// 航班编号
-    id: usize,
+    pub(crate) id: usize,
     /// 机器型号
-    mtype: String,
+    pub(crate) mtype: String,
     /// 起飞时间
-    stime: String,
+    pub(crate) stime: String,
     /// 预计飞行时间(单位为分钟)
-    ftime: u32,
+    pub(crate) ftime: u32,
     /// 客容量
-    capacity: u32,
+    pub(crate) capacity: u32,
     /// 价格
-    price: u32
+    pub(crate) price: u32
 }
 
 impl SqlEntry for Flight {

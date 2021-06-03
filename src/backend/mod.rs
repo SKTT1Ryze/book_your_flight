@@ -3,6 +3,7 @@
 mod flight;
 mod passenger;
 mod time;
+mod table;
 
 use mysql::PooledConn;
 
