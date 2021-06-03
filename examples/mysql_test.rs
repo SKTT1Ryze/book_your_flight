@@ -11,7 +11,7 @@ struct Entry {
 fn main() -> mysql::Result<()> {
     println!("book your flights!");
     println!("Hello, mysql!");
-    let url = "mysql://sktt1ryze:123123@localhost/test_db";
+    let url = "mysql://root:SKTT1Faker668@localhost/test_db";
     let pool = Pool::new(url)?;
     let mut conn = pool.get_conn()?;
     conn.query_drop(
