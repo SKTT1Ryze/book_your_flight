@@ -4,72 +4,53 @@
 
 mod backend;
 mod frontend;
+mod config;
+
 
 use bevy::prelude::*;
-use std::time;
-
-struct SnakeHead;
-struct Materials {
-    head_material: Handle<ColorMaterial>,
-}
-
-struct SnakeSpawnTimer(Timer);
-impl Default for SnakeSpawnTimer {
-    fn default() -> Self {
-        Self(Timer::new(time::Duration::from_millis(1000), true))
-    }
-}
-
-// Commands -> Resources -> Components -> Queries
-fn setup(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
-    commands.spawn(Camera2dBundle::default());
-    commands.insert_resource(
-        Materials {
-            head_material: materials.add(Color::rgb(0.7, 0.7, 0.7).into())
-        }
-    );
-}
-
-fn game_setup(commands: &mut Commands, materials: Res<Materials>) {
-    commands.spawn(
-        SpriteBundle {
-            material: materials.head_material.clone(),
-            sprite: Sprite::new(Vec2::new(10.0, 10.0)),
-            ..Default::default()
-        }
-    ).with(SnakeHead);
-}
-
-fn snake_movement(mut snake_head: Query<(&mut SnakeHead, &mut Transform)>) {
-    for (_head, mut head_pos) in snake_head.iter_mut() {
-        head_pos.translation.x += 1.0;        
-    }
-}
-
-fn snake_spawn(
-    commands: &mut Commands,
-    materials: Res<Materials>,
-    time: Res<Time>,
-    mut timer: ResMut<SnakeSpawnTimer>,
-) {
-    timer.0.tick(time.delta_seconds());
-    if timer.0.finished() {
-        // todo
-        println!("{:?}: timer tick!", time::Instant::now());
-    }
-}
+use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CtxRef, Ui}};
+use config::*;
+use frontend::scene::Scene;
 
 fn main() {
     App::build()
-        .add_resource(
-            SnakeSpawnTimer(
-                Timer::new(time::Duration::from_millis(100. as u64), true)
-            )
-        )
-        .add_startup_system(setup.system())
-        .add_startup_stage("game_setup", SystemStage::single(game_setup.system()))
-        .add_system(snake_movement.system())
-        .add_system(snake_spawn.system())
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins) // 添加默认插件
+        .add_plugin(EguiPlugin) // 添加 egui 插件
+        .add_startup_system(setup_system.system())
+        // .add_system(update_ui_scale_factor.system())
+        .add_system(ui_menu.system())
         .run();
+}
+
+fn setup_system(world: &mut World, res: &mut Resources) {
+    let mut egui_ctx = res.get_mut::<EguiContext>().expect("failed to get egui context");
+    let asset_server = res.get::<AssetServer>().expect("failed to get asset server");
+    let handle = asset_server.load("branding/icon.png");
+    egui_ctx.set_egui_texture(BEVY_TEXTURE_ID, handle);
+}
+
+fn update_ui_scale_factor(mut egui_settings: ResMut<EguiSettings>, wins: Res<Windows>) {
+    if let Some(win) = wins.get_primary() {
+        egui_settings.scale_factor = 1.0 / win.scale_factor();
+    }
+}
+
+fn ui_menu(
+    world: &mut World,
+    res: &mut Resources
+) {
+    let mut egui_ctx = res.get_mut::<EguiContext>().expect("faild to get egui context");
+    let ctx = &mut egui_ctx.ctx;
+    egui::SidePanel::left("side_panel", SIDE_PANEL_WIDTH)
+        .show(ctx, |ui| {
+            ui.heading("Side Panel");
+            let mut input = String::new();
+            ui.horizontal(|ui| {
+                ui.label("input box: ");
+                ui.text_edit_singleline(&mut input);
+            });
+            if ui.add(egui::Button::new("button")).clicked() {
+                println!("button is cliked!");
+            }
+        });
 }
