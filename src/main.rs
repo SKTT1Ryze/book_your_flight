@@ -8,12 +8,13 @@ mod config;
 
 
 use bevy::prelude::*;
-use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CtxRef, Ui}};
+use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CtxRef, InnerResponse}};
 use config::*;
-use frontend::scene::Scene;
+use frontend::scene::Scenes;
 
 fn main() {
     App::build()
+        .add_resource(Scenes::default())
         .add_plugins(DefaultPlugins) // 添加默认插件
         .add_plugin(EguiPlugin) // 添加 egui 插件
         .add_startup_system(setup_system.system())
