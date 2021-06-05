@@ -28,7 +28,7 @@ impl Datetime {
             
         }
     }
-    pub fn from_str(sql: &str) -> Self {
+    pub fn from_sql(sql: &str) -> Self {
         todo!()
     }
 }

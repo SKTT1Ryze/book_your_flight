@@ -3,6 +3,7 @@
 //! 机票预定系统
 
 mod backend;
+mod frontend;
 
 use bevy::prelude::*;
 use std::time;
