@@ -32,8 +32,6 @@ where
     _maker: PhantomData<R>
 }
 
-
-
 impl<S, LF, TF, CF, R> Scene<S, LF, TF, CF, R>
 where
     S: Hash + Copy,

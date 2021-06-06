@@ -6,7 +6,6 @@ mod backend;
 mod frontend;
 mod config;
 
-
 use bevy::prelude::*;
 use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CtxRef, InnerResponse}};
 use frontend::scene::{Scenes, Scene};
