@@ -156,8 +156,6 @@ impl<S: Hash + Copy> TopPanelBuilder<S> {
     }
 }
 
-
-
 #[derive(Clone, Debug)]
 pub struct CentralPanelBuilder {
     pub frame: Option<Frame>

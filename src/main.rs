@@ -28,7 +28,7 @@ impl<'scenes> Default for AppScenes<'scenes> {
 fn main() {
     App::build()
         .add_resource(AppScenes::default())
-        .add_resource(StateMachine::<usize, STATE_NUM>::unused())
+        .add_resource(StateMachine::<usize, STATE_NUM>::init())
         .add_plugins(DefaultPlugins) // 添加默认插件
         .add_plugin(EguiPlugin) // 添加 egui 插件
         .add_startup_system(setup_system.system())

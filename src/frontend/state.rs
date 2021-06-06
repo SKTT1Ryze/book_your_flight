@@ -29,6 +29,48 @@ impl<I: Eq + Hash + Copy> StateMachine<I, STATE_NUM> {
             current_state_id: 0
         }
     }
+
+    
+}
+
+impl StateMachine<usize, STATE_NUM> {
+    pub fn init() -> Self {
+        let mut state0 = State::new(0);
+        state0.insert_next_state(1, 1);
+        state0.insert_next_state(2, 2);
+        let mut state1 = State::new(1);
+        let mut state2 = State::new(2);
+        state2.insert_next_state(0, 0);
+        state2.insert_next_state(1, 1);
+        state2.insert_next_state(4, 3);
+        let mut state3 = State::new(3);
+        state3.insert_next_state(0, 0);
+        state3.insert_next_state(1, 1);
+        state3.insert_next_state(3, 4);
+        state3.insert_next_state(4, 5);
+        state3.insert_next_state(5, 2);
+        let mut state4 = State::new(4);
+        state4.insert_next_state(0, 0);
+        state4.insert_next_state(1, 1);
+        state4.insert_next_state(3, 6);
+        state4.insert_next_state(4, 3);
+        let mut state5 = State::new(5);
+        state5.insert_next_state(0, 0);
+        state5.insert_next_state(1, 1);
+        state5.insert_next_state(5, 3);
+        let mut state6 = State::new(6);
+        state6.insert_next_state(0, 0);
+        state6.insert_next_state(1, 1);
+        state6.insert_next_state(4, 4);
+        let states = [
+            state0, state1, state2, state3,
+            state4, state5, state6
+        ];
+        Self {
+            states,
+            current_state_id: 0
+        }
+    }
 }
 
 impl<I, const N: usize> StateMachine<I, N>
@@ -83,6 +125,14 @@ impl<I> State<I>
 where
     I: Eq + Hash + Copy
 {
+    pub fn new(id: usize) -> Self {
+        Self {
+            id,
+            next_states: HashMap::new(),
+            scene_id: id
+        }
+    }
+
     /// 插入新的输入和下一个状态的对应关系，如果已经存在则返回旧的值，否则返回 None
     pub fn insert_next_state(&mut self, input: I, next_state: usize) -> Option<usize> {
         self.next_states.insert(input, next_state)
