@@ -9,18 +9,18 @@ use bevy_egui::egui::{CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel};
 use super::state::StateMachine;
 use crate::config::*;
 
-pub type ShowF<T, R> = fn(T, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R>;
+pub type ShowF<T, R> = fn(T, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R>;
 
-pub struct Scenes<'scenes, R, const N: usize> {
-    pub inner: [Scene<&'scenes str, ShowF<SidePanel, R>, ShowF<TopPanel, R>, ShowF<CentralPanel, R>, R>; N]
+pub struct Scenes<'s, R, const N: usize> {
+    pub inner: [Scene<&'s str, ShowF<SidePanel, R>, ShowF<TopPanel, R>, ShowF<CentralPanel, R>, R>; N]
 }
 
 pub struct Scene<S, LF, TF, CF, R>
 where
     S: Hash + Copy,
-    LF: Fn(SidePanel, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R> + Copy,
-    TF: Fn(TopPanel, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R> + Copy,
-    CF: Fn(CentralPanel, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R> + Copy
+    LF: Fn(SidePanel, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R> + Copy,
+    TF: Fn(TopPanel, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R> + Copy,
+    CF: Fn(CentralPanel, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R> + Copy
 {
     pub name: String,
     pub left_panel: SidePanelBuilder<S>,
@@ -35,9 +35,9 @@ where
 impl<S, LF, TF, CF, R> Scene<S, LF, TF, CF, R>
 where
     S: Hash + Copy,
-    LF: Fn(SidePanel, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R> + Copy,
-    TF: Fn(TopPanel, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R> + Copy,
-    CF: Fn(CentralPanel, &CtxRef, &ResourceRefMut<StateMachine>) -> InnerResponse<R> + Copy
+    LF: Fn(SidePanel, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R> + Copy,
+    TF: Fn(TopPanel, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R> + Copy,
+    CF: Fn(CentralPanel, &CtxRef, &ResourceRefMut<StateMachine<usize, STATE_NUM>>) -> InnerResponse<R> + Copy
 {
     pub fn new(
         name: String,
@@ -63,7 +63,7 @@ where
         }
     }
 
-    pub fn show(&self, ctx: &CtxRef, state_machine: &ResourceRefMut<StateMachine>) {
+    pub fn show(&self, ctx: &CtxRef, state_machine: &ResourceRefMut<StateMachine<usize, STATE_NUM>>) {
         let side_panel = self.left_panel.side_panel();
         let top_panel = self.top_panel.top_panel();
         let center_panel = self.center_panel.center_panel();
@@ -82,7 +82,7 @@ impl<'scene> Default for Scene<&'scene str, ShowF<SidePanel, ()>, ShowF<TopPanel
         fn left_show_f(
             left_panel: SidePanel,
             ctx: &CtxRef,
-            state_machine: &ResourceRefMut<StateMachine>
+            state_machine: &ResourceRefMut<StateMachine<usize, STATE_NUM>>
         ) -> InnerResponse<()> {
             // todo: handle state machine
             left_panel.show(ctx, |ui| {
@@ -92,7 +92,7 @@ impl<'scene> Default for Scene<&'scene str, ShowF<SidePanel, ()>, ShowF<TopPanel
         fn top_show_f(
             top_panel: TopPanel,
             ctx: &CtxRef,
-            state_machine: &ResourceRefMut<StateMachine>
+            state_machine: &ResourceRefMut<StateMachine<usize, STATE_NUM>>
         ) -> InnerResponse<()> {
             top_panel.show(ctx, |ui| {
                 ui.heading("Top Panel");
@@ -101,7 +101,7 @@ impl<'scene> Default for Scene<&'scene str, ShowF<SidePanel, ()>, ShowF<TopPanel
         fn center_show_f(
             center_panel: CentralPanel,
             ctx: &CtxRef,
-            state_machine: &ResourceRefMut<StateMachine>
+            state_machine: &ResourceRefMut<StateMachine<usize, STATE_NUM>>
         ) -> InnerResponse<()> {
             center_panel.show(ctx, |ui| {
                 ui.heading("Center Panel");

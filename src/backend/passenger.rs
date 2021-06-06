@@ -8,18 +8,21 @@ pub struct Passenger {
     id_card: usize,
     /// 姓名
     name: String,
+    /// 密码
+    password: String,
 }
 
 impl SqlEntry for Passenger {
     fn insert(&self, db: &mut PooledConn, tb_name: &str) -> mysql::Result<()> {
         let stmt = format!(
-            r#"insert into {} (id_card, name)
-            values (:id_card, :name)"#,
+            r#"insert into {} (id_card, name, password)
+            values (:id_card, :name, :password)"#,
             tb_name
         );
         db.exec_drop(stmt, params! {
             "id_card" => self.id_card,
-            "name" => self.name.as_str()
+            "name" => self.name.as_str(),
+            "password" => self.password.as_str()
         })?;
         Ok(())
     }
@@ -33,10 +36,11 @@ impl SqlEntry for Passenger {
         );
         let mut select_ret = db.query_map(
             query,
-            |(id_card, name)| {
+            |(id_card, name, password)| {
                 Self {
                     id_card,
-                    name
+                    name,
+                    password
                 }
             }
         )?;
@@ -152,13 +156,15 @@ fn passenger_test() -> mysql::Result<()> {
         r"
             create temporary table passengers (
                 id_card int not null,
-                name char(20) not null
+                name char(20) not null,
+                password char(20) not null
             )
         "
     )?;
     let passenger = Passenger {
         id_card: 0,
-        name: "ccc".to_string()
+        name: "ccc".to_string(),
+        password: "testpassword".to_string()
     };
     passenger.insert(&mut conn, "passengers")?;
     let new_passenger = Passenger::select(&mut conn, "passengers", 0)?;

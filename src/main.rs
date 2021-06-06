@@ -12,11 +12,13 @@ use frontend::scene::{Scenes, Scene};
 use frontend::state::StateMachine;
 use config::*;
 
-type AppScenes<'scenes> = Scenes<'scenes, (), 5>;
+type AppScenes<'s> = Scenes<'s, (), STATE_NUM>;
 
 impl<'scenes> Default for AppScenes<'scenes> {
     fn default() -> Self {
-        let inner = [Scene::default(), Scene::default(), Scene::default(), Scene::default(), Scene::default()];
+        let inner = [
+            Scene::default(), Scene::default(), Scene::default(), Scene::default(),
+            Scene::default(), Scene::default(), Scene::default()];
         Self {
             inner
         }
@@ -26,7 +28,7 @@ impl<'scenes> Default for AppScenes<'scenes> {
 fn main() {
     App::build()
         .add_resource(AppScenes::default())
-        .add_resource(StateMachine)
+        .add_resource(StateMachine::<usize, STATE_NUM>::unused())
         .add_plugins(DefaultPlugins) // 添加默认插件
         .add_plugin(EguiPlugin) // 添加 egui 插件
         .add_startup_system(setup_system.system())
@@ -55,7 +57,7 @@ fn ui_menu(
     let mut egui_ctx = res.get_mut::<EguiContext>().expect("faild to get egui context");
     let ctx = &mut egui_ctx.ctx;
     let scenes = res.get_mut::<AppScenes>().unwrap();
-    let state_machine = res.get_mut::<StateMachine>().unwrap();
+    let state_machine = res.get_mut::<StateMachine<usize, STATE_NUM>>().unwrap();
     let scene = scenes.inner.iter().next().unwrap();
     scene.show(ctx, &state_machine);
 }
