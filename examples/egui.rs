@@ -46,7 +46,6 @@ fn ui_example(_world: &mut World, resources: &mut Resources) {
     let mut load = false;
     let mut remove = false;
     let mut invert = false;
-
     egui::SidePanel::left("side_panel", 200.0).show(ctx, |ui| {
         ui.heading("Side Panel");
 

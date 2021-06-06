@@ -9,12 +9,23 @@ mod config;
 
 use bevy::prelude::*;
 use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CtxRef, InnerResponse}};
+use frontend::scene::{Scenes, Scene};
 use config::*;
-use frontend::scene::Scenes;
+
+type TestScenes = Scenes<(), 5>;
+
+impl Default for TestScenes {
+    fn default() -> Self {
+        let inner = [Scene::default(), Scene::default(), Scene::default(), Scene::default(), Scene::default()];
+        Self {
+            inner
+        }
+    }
+}
 
 fn main() {
     App::build()
-        .add_resource(Scenes::default())
+        .add_resource(TestScenes::default())
         .add_plugins(DefaultPlugins) // 添加默认插件
         .add_plugin(EguiPlugin) // 添加 egui 插件
         .add_startup_system(setup_system.system())
@@ -38,20 +49,22 @@ fn update_ui_scale_factor(mut egui_settings: ResMut<EguiSettings>, wins: Res<Win
 
 fn ui_menu(
     world: &mut World,
-    res: &mut Resources
+    res: &mut Resources,
 ) {
     let mut egui_ctx = res.get_mut::<EguiContext>().expect("faild to get egui context");
     let ctx = &mut egui_ctx.ctx;
-    egui::SidePanel::left("side_panel", SIDE_PANEL_WIDTH)
-        .show(ctx, |ui| {
-            ui.heading("Side Panel");
-            let mut input = String::new();
-            ui.horizontal(|ui| {
-                ui.label("input box: ");
-                ui.text_edit_singleline(&mut input);
-            });
-            if ui.add(egui::Button::new("button")).clicked() {
-                println!("button is cliked!");
-            }
-        });
+    let scenes = res.get_mut::<TestScenes>().unwrap();
+    // egui::SidePanel::left("side_panel", SIDE_PANEL_WIDTH)
+    //     .show(ctx, |ui| {
+    //         ui.heading("Side Panel");
+    //         let mut input = String::new();
+    //         ui.horizontal(|ui| {
+    //             ui.label("input box: ");
+    //             ui.text_edit_singleline(&mut input);
+    //         });
+    //         if ui.add(egui::Button::new("button")).clicked() {
+    //             println!("button is cliked!");
+    //         }
+    //     });
+    
 }
