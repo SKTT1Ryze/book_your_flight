@@ -7,7 +7,7 @@ mod frontend;
 mod config;
 
 use bevy::{ecs::ResourceRefMut, prelude::*};
-use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
+use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
 use frontend::scene::{Scenes, Scene, ShowF};
 use frontend::state::StateMachine;
 use config::*;
@@ -45,54 +45,61 @@ fn ui_menu(
     let ctx = &mut egui_ctx.ctx;
     let scenes = res.get_mut::<AppScenes>().unwrap();
     let mut state_machine = res.get_mut::<StateMachine<usize, STATE_NUM>>().unwrap();
-    let scene = scenes.inner.iter().next().unwrap();
-    scene.show(ctx, &mut state_machine);
+    let scene_id = state_machine.scene_id();
+    scenes.inner[scene_id].show(ctx, &mut state_machine);
 }
 
 type AppScenes<'s> = Scenes<'s, (), STATE_NUM>;
 type StateMachineRef<'r> = ResourceRefMut<'r, StateMachine<usize, STATE_NUM>>;
 impl<'s> AppScenes<'s> {
     fn init() -> Self {
-        fn left_show_f(
-            l: SidePanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            l.show(ctx, |ui| {
-                ui.heading("menu");
-                // if ui.button("flight message input").clicked() {
-                //     let curr_state = s.current_state();
-                //     if let Some(next_state) = s.state_transfer(0) {
-                //         println!("state conversion: {} -> {}", curr_state, next_state);
-                //     }
-                // }
-                button!(ui, s, "flight message input", 0);
-                button!(ui, s, "seats info input", 1);
-                button!(ui, s, "passenger login", 2);
-            })
-        }
+        show!(SidePanel, left_show_f, |ui| {
+            ui.heading("menu");
+            button!(ui, s, "flight message input", 0);
+            button!(ui, s, "seats info input", 1);
+            button!(ui, s, "passenger login", 2);
+        }, s: &mut StateMachineRef);
         
-        fn top_show_f(
-            t: TopPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            t.show(ctx, |ui| {
-                ui.heading("book your flight!");
-            })
-        }
+        show!(TopPanel, top_show_f, |ui| {
+            ui.heading("book your flight!");
+        }, s: &mut StateMachineRef);
 
-        fn center_show_f0(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "confirm", 3);
-            })
-        }
+        show!(CentralPanel, center_show_f0, |ui| {
+            button!(ui, s, "confirm", 3);
+        }, s: &mut StateMachineRef);
 
-        let scene0 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        show!(CentralPanel, center_show_f1, |ui| {
+            button!(ui, s, "confirm", 3);
+        }, s: &mut StateMachineRef);
+
+        show!(CentralPanel, center_show_f2, |ui| {
+            button!(ui, s, "registered", 3);
+            button!(ui, s, "login", 4);
+        }, s: &mut StateMachineRef);
+
+        show!(CentralPanel, center_show_f3, |ui| {
+            button!(ui, s, "book", 3);
+            button!(ui, s, "unsubscribe or pay", 4);
+            button!(ui, s, "logout", 5);
+        }, s: &mut StateMachineRef);
+
+        show!(CentralPanel, center_show_f4, |ui| {
+            button!(ui, s, "search", 3);
+            button!(ui, s, "back", 4);
+        }, s: &mut StateMachineRef);
+
+        show!(CentralPanel, center_show_f5, |ui| {
+            button!(ui, s, "unsubscribe", 3);
+            button!(ui, s, "pay", 4);
+            button!(ui, s, "back", 5);
+        }, s: &mut StateMachineRef);
+
+        show!(CentralPanel, center_show_f6, |ui| {
+            button!(ui, s, "book", 3);
+            button!(ui, s, "back", 4);
+        }, s: &mut StateMachineRef);
+
+        let scene0 = scene!(
             "Scene0".to_string(),
             "left side panel 0",
             SIDE_PANEL_WIDTH,
@@ -103,17 +110,7 @@ impl<'s> AppScenes<'s> {
             center_show_f0
         );
 
-        fn center_show_f1(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "confirm", 3);
-            })
-        }
-
-        let scene1 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        let scene1 = scene!(
             "Scene1".to_string(),
             "left side panel 1",
             SIDE_PANEL_WIDTH,
@@ -124,18 +121,7 @@ impl<'s> AppScenes<'s> {
             center_show_f1
         );
 
-        fn center_show_f2(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "registered", 3);
-                button!(ui, s, "login", 4);
-            })
-        }
-
-        let scene2 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        let scene2 = scene!(
             "Scene2".to_string(),
             "left side panel 2",
             SIDE_PANEL_WIDTH,
@@ -146,19 +132,7 @@ impl<'s> AppScenes<'s> {
             center_show_f2
         );
 
-        fn center_show_f3(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "book", 3);
-                button!(ui, s, "unsubscribe or pay", 4);
-                button!(ui, s, "logout", 5);
-            })
-        }
-
-        let scene3 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        let scene3 = scene!(
             "Scene3".to_string(),
             "left side panel 3",
             SIDE_PANEL_WIDTH,
@@ -169,18 +143,7 @@ impl<'s> AppScenes<'s> {
             center_show_f3
         );
 
-        fn center_show_f4(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "search", 3);
-                button!(ui, s, "back", 4);
-            })
-        }
-
-        let scene4 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        let scene4 = scene!(
             "Scene4".to_string(),
             "left side panel 4",
             SIDE_PANEL_WIDTH,
@@ -191,19 +154,7 @@ impl<'s> AppScenes<'s> {
             center_show_f4
         );
 
-        fn center_show_f5(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "unsubscribe", 3);
-                button!(ui, s, "pay", 4);
-                button!(ui, s, "back", 5);
-            })
-        }
-
-        let scene5 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        let scene5 = scene!(
             "Scene5".to_string(),
             "left side panel 5",
             SIDE_PANEL_WIDTH,
@@ -214,18 +165,7 @@ impl<'s> AppScenes<'s> {
             center_show_f5
         );
 
-        fn center_show_f6(
-            c: CentralPanel,
-            ctx: &CtxRef,
-            s: &mut StateMachineRef
-        ) -> InnerResponse<()> {
-            c.show(ctx, |ui| {
-                button!(ui, s, "book", 3);
-                button!(ui, s, "back", 4);
-            })
-        }
-
-        let scene6 = Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+        let scene6 = scene!(
             "Scene6".to_string(),
             "left side panel 6",
             SIDE_PANEL_WIDTH,
@@ -266,4 +206,26 @@ macro_rules! button {
             }
         }
     }
+}
+#[macro_export]
+macro_rules! show {
+    ($ty:ty, $ident:ident, $closure:expr, $($s:ident: $s_ty:ty)?) => {
+        fn $ident(
+            p: $ty,
+            ctx: &CtxRef,
+            $($s: $s_ty)?
+        ) -> InnerResponse<()> {
+            p.show(ctx, $closure)
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! scene {
+    ($name:expr, $left_src:expr, $width:expr, $top_src:expr,
+        $frame:expr, $left_f:expr, $top_f:expr, $center_f:expr ) => {
+            Scene::<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>::new(
+                $name, $left_src, $width, $top_src, $frame, $left_f, $top_f, $center_f
+            )
+    };
 }

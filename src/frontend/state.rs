@@ -39,6 +39,8 @@ impl StateMachine<usize, STATE_NUM> {
         state0.insert_next_state(1, 1);
         state0.insert_next_state(2, 2);
         let mut state1 = State::new(1);
+        state1.insert_next_state(0, 0);
+        state1.insert_next_state(2, 2);
         let mut state2 = State::new(2);
         state2.insert_next_state(0, 0);
         state2.insert_next_state(1, 1);
