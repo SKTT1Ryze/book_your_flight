@@ -76,7 +76,7 @@ where
     }
 }
 
-impl<'scene> Default for Scene<&'scene str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>
+impl<'s> Default for Scene<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, ShowF<CentralPanel, ()>, ()>
 {
     fn default() -> Self {
         fn left_show_f(
