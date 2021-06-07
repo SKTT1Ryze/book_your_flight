@@ -6,11 +6,30 @@ mod backend;
 mod frontend;
 mod config;
 
+use std::collections::HashMap;
+use std::sync::{Mutex, Arc};
 use bevy::{ecs::ResourceRefMut, prelude::*};
 use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
 use frontend::scene::{Scenes, Scene, ShowF};
 use frontend::state::StateMachine;
 use config::*;
+
+lazy_static::lazy_static! {
+    static ref INPUTBOX_KEY: Vec<Vec<&'static str>> = vec![
+        vec!["flight id", "flight type", "flight stime", "flight ftime", "flight capacity", "flight price"],
+        vec!["seat id", "seat flight_id", "seat row", "seat column", "seat is_booked"],
+        vec!["p id_card", "p name", "p password"],
+        vec!["stime", "etime"],
+        vec!["flight_id to be handled"]
+        ];
+    static ref INPUTBOX: Arc<Mutex<HashMap<&'static str, String>>> = {
+        let mut h = HashMap::new();
+        INPUTBOX_KEY.iter().flat_map(|v| v.iter()).for_each(|s| {
+            h.insert(*s, String::new());
+        });
+        Arc::new(Mutex::new(h))
+    };
+}
 
 fn main() {
     App::build()
@@ -65,14 +84,41 @@ impl<'s> AppScenes<'s> {
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f0, |ui| {
+            let mut b = INPUTBOX.lock().unwrap();
+            for k in INPUTBOX_KEY[0].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });
+            }
             button!(ui, s, "confirm", 3);
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f1, |ui| {
+            let mut b = INPUTBOX.lock().unwrap();
+            for k in INPUTBOX_KEY[1].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });   
+            }
             button!(ui, s, "confirm", 3);
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f2, |ui| {
+            let mut b = INPUTBOX.lock().unwrap();
+            for k in INPUTBOX_KEY[2].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });  
+            }
             button!(ui, s, "registered", 3);
             button!(ui, s, "login", 4);
         }, s: &mut StateMachineRef);
@@ -84,11 +130,29 @@ impl<'s> AppScenes<'s> {
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f4, |ui| {
+            let mut b = INPUTBOX.lock().unwrap();
+            for k in INPUTBOX_KEY[3].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });   
+            }
             button!(ui, s, "search", 3);
             button!(ui, s, "back", 4);
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f5, |ui| {
+            let mut b = INPUTBOX.lock().unwrap();
+            for k in INPUTBOX_KEY[4].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });    
+            }
             button!(ui, s, "unsubscribe", 3);
             button!(ui, s, "pay", 4);
             button!(ui, s, "back", 5);

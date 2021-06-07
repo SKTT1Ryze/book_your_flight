@@ -29,8 +29,6 @@ impl<I: Eq + Hash + Copy> StateMachine<I, STATE_NUM> {
             current_state_id: 0
         }
     }
-
-    
 }
 
 impl StateMachine<usize, STATE_NUM> {
