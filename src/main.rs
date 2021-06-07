@@ -14,7 +14,7 @@ use config::*;
 
 fn main() {
     App::build()
-        .add_resource(AppScenes::default())
+        .add_resource(AppScenes::init())
         .add_resource(StateMachine::<usize, STATE_NUM>::init())
         .add_plugins(DefaultPlugins) // 添加默认插件
         .add_plugin(EguiPlugin) // 添加 egui 插件
@@ -44,9 +44,9 @@ fn ui_menu(
     let mut egui_ctx = res.get_mut::<EguiContext>().expect("faild to get egui context");
     let ctx = &mut egui_ctx.ctx;
     let scenes = res.get_mut::<AppScenes>().unwrap();
-    let state_machine = res.get_mut::<StateMachine<usize, STATE_NUM>>().unwrap();
+    let mut state_machine = res.get_mut::<StateMachine<usize, STATE_NUM>>().unwrap();
     let scene = scenes.inner.iter().next().unwrap();
-    scene.show(ctx, &state_machine);
+    scene.show(ctx, &mut state_machine);
 }
 
 type AppScenes<'s> = Scenes<'s, (), STATE_NUM>;
@@ -106,7 +106,7 @@ impl<'s> AppScenes<'s> {
         fn center_show_f1(
             c: CentralPanel,
             ctx: &CtxRef,
-            s: &StateMachineRef
+            s: &mut StateMachineRef
         ) -> InnerResponse<()> {
             c.show(ctx, |ui| {
                 button!(ui, s, "confirm", 3);
@@ -127,7 +127,7 @@ impl<'s> AppScenes<'s> {
         fn center_show_f2(
             c: CentralPanel,
             ctx: &CtxRef,
-            s: &StateMachineRef
+            s: &mut StateMachineRef
         ) -> InnerResponse<()> {
             c.show(ctx, |ui| {
                 button!(ui, s, "registered", 3);
@@ -149,7 +149,7 @@ impl<'s> AppScenes<'s> {
         fn center_show_f3(
             c: CentralPanel,
             ctx: &CtxRef,
-            s: &StateMachineRef
+            s: &mut StateMachineRef
         ) -> InnerResponse<()> {
             c.show(ctx, |ui| {
                 button!(ui, s, "book", 3);
@@ -172,7 +172,7 @@ impl<'s> AppScenes<'s> {
         fn center_show_f4(
             c: CentralPanel,
             ctx: &CtxRef,
-            s: &StateMachineRef
+            s: &mut StateMachineRef
         ) -> InnerResponse<()> {
             c.show(ctx, |ui| {
                 button!(ui, s, "search", 3);
@@ -194,7 +194,7 @@ impl<'s> AppScenes<'s> {
         fn center_show_f5(
             c: CentralPanel,
             ctx: &CtxRef,
-            s: &StateMachineRef
+            s: &mut StateMachineRef
         ) -> InnerResponse<()> {
             c.show(ctx, |ui| {
                 button!(ui, s, "unsubscribe", 3);
@@ -217,7 +217,7 @@ impl<'s> AppScenes<'s> {
         fn center_show_f6(
             c: CentralPanel,
             ctx: &CtxRef,
-            s: &StateMachineRef
+            s: &mut StateMachineRef
         ) -> InnerResponse<()> {
             c.show(ctx, |ui| {
                 button!(ui, s, "book", 3);
