@@ -9,18 +9,19 @@ mod config;
 use std::collections::HashMap;
 use std::sync::{Mutex, Arc};
 use bevy::{ecs::ResourceRefMut, prelude::*};
-use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
+use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
 use frontend::scene::{Scenes, Scene, ShowF};
 use frontend::state::StateMachine;
+use mysql::{Pool, PooledConn, prelude::Queryable};
 use config::*;
 
 lazy_static::lazy_static! {
     static ref INPUTBOX_KEY: Vec<Vec<&'static str>> = vec![
-        vec!["flight id", "flight type", "flight stime", "flight ftime", "flight capacity", "flight price"],
-        vec!["seat id", "seat flight_id", "seat row", "seat column", "seat is_booked"],
-        vec!["p id_card", "p name", "p password"],
+        vec!["flight-id", "type", "flight-stime", "flight-ftime", "capacity", "price"],
+        vec!["seat-id", "seat-flight-id", "row", "column", "is-booked"],
+        vec!["id-card", "name", "password"],
         vec!["stime", "etime"],
-        vec!["flight_id to be handled"]
+        vec!["handled-id"]
         ];
     static ref INPUTBOX: Arc<Mutex<HashMap<&'static str, String>>> = {
         let mut h = HashMap::new();
@@ -28,6 +29,11 @@ lazy_static::lazy_static! {
             h.insert(*s, String::new());
         });
         Arc::new(Mutex::new(h))
+    };
+    static ref DB: Arc<Mutex<PooledConn>> = {
+        let pool = Pool::new(DB_URL).expect("failed to get pool");
+        let conn = pool.get_conn().expect("failed to get conn");
+        Arc::new(Mutex::new(conn))
     };
 }
 
@@ -38,7 +44,7 @@ fn main() {
         .add_plugins(DefaultPlugins) // 添加默认插件
         .add_plugin(EguiPlugin) // 添加 egui 插件
         .add_startup_system(setup_system.system())
-        // .add_system(update_ui_scale_factor.system())
+        .add_system(update_ui_scale_factor.system())
         .add_system(ui_menu.system())
         .run();
 }
@@ -77,6 +83,7 @@ impl<'s> AppScenes<'s> {
             button!(ui, s, "flight message input", 0);
             button!(ui, s, "seats info input", 1);
             button!(ui, s, "passenger login", 2);
+            
         }, s: &mut StateMachineRef);
         
         show!(TopPanel, top_show_f, |ui| {
@@ -93,7 +100,18 @@ impl<'s> AppScenes<'s> {
                     );
                 });
             }
-            button!(ui, s, "confirm", 3);
+            button_alpha!(ui, s, "confirm", 3, |db: &mut PooledConn| {
+                let flight_id = b.get("flight-id").unwrap();
+                let flight_type = b.get("type").unwrap();
+                let flight_stime = b.get("flight-stime").unwrap();
+                let flight_ftime = b.get("flight-ftime").unwrap();
+                let flight_capacity = b.get("capacity").unwrap();
+                let filght_price = b.get("price").unwrap();
+                println!("id: {}, type: {}", flight_id, flight_type);
+                println!("stime: {}, ftime: {}", flight_stime, flight_ftime);
+                println!("capacity: {}, price: {}", flight_capacity, filght_price);
+            });
+            
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f1, |ui| {
@@ -106,7 +124,16 @@ impl<'s> AppScenes<'s> {
                     );
                 });   
             }
-            button!(ui, s, "confirm", 3);
+            button_alpha!(ui, s, "confirm", 3, |db: &mut PooledConn| {
+                let seat_id = b.get("seat-id").unwrap();
+                let seat_flight_id = b.get("seat-flight-id").unwrap();
+                let row = b.get("row").unwrap();
+                let column = b.get("column").unwrap();
+                let is_booked = b.get("is-booked").unwrap();
+                println!("seat id: {}, flight id: {}", seat_id, seat_flight_id);
+                println!("row: {}, column: {}", row, column);
+                println!("is booked: {}", is_booked);
+            });
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f2, |ui| {
@@ -271,6 +298,21 @@ macro_rules! button {
         }
     }
 }
+
+#[macro_export]
+macro_rules! button_alpha {
+    ($ui:expr, $s:expr, $name:expr, $input:expr, $closure:expr) => {
+        if $ui.button($name).clicked() {
+            let mut db = DB.lock().unwrap();
+            $closure(&mut db);
+            let curr_state = $s.current_state();
+            if let Some(next_state) = $s.state_transfer($input) {
+                println!("state conversion: {} -> {}", curr_state, next_state);
+            }
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! show {
     ($ty:ty, $ident:ident, $closure:expr, $($s:ident: $s_ty:ty)?) => {
