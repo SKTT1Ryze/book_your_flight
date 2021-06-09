@@ -146,8 +146,19 @@ impl<'s> AppScenes<'s> {
                     );
                 });  
             }
-            button!(ui, s, "registered", 3);
-            button!(ui, s, "login", 4);
+            let id_card = b.get("id-card").unwrap();
+            let name = b.get("name").unwrap();
+            let password = b.get("password").unwrap();
+            button_alpha!(ui, s, "registered", 3, |db: &mut PooledConn| {
+                println!("id card: {}", id_card);
+                println!("name: {}", name);
+                println!("password: {}", password);
+            });
+            button_alpha!(ui, s, "login", 4, |db: &mut PooledConn| {
+                println!("id card: {}", id_card);
+                println!("name: {}", name);
+                println!("password: {}", password);
+            });
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f3, |ui| {
@@ -166,7 +177,11 @@ impl<'s> AppScenes<'s> {
                     );
                 });   
             }
-            button!(ui, s, "search", 3);
+            button_alpha!(ui, s, "search", 3, |db: &mut PooledConn| {
+                let s_time = b.get("stime").unwrap();
+                let e_time = b.get("etime").unwrap();
+                println!("stime: {}, etime: {}", s_time, e_time);
+            });
             button!(ui, s, "back", 4);
         }, s: &mut StateMachineRef);
 
