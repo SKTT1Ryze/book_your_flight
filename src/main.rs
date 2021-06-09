@@ -329,7 +329,24 @@ impl<'s> AppScenes<'s> {
                     no_err = false;
                     (0, 0, 0, 0)
                 });
-                true
+                if no_err {
+                    // 最早起飞时间
+                    let start = time::Datetime::new(2021, stime.0, stime.1, stime.2, stime.3, 0, 0).as_sql();
+                    // 最晚起飞时间
+                    let end = time::Datetime::new(2021, etime.0, etime.1, etime.2, etime.3, 0, 0).as_sql();
+                    let select_ret = sql_select(db, "flights", |(id, mtype, stime, ftime, capacity, price)| {
+                        flight::Flight {
+                            id,
+                            mtype,
+                            stime,
+                            ftime,
+                            capacity,
+                            price
+                        }
+                    }, format!("where stime >= '{}' and stime <= '{}'", start, end).as_str());
+                    println!("found ret: {:?}", select_ret);
+                }
+                no_err
             });
             button!(ui, s, "back", 4);
         }, s: &mut StateMachineRef);

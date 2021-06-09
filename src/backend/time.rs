@@ -16,11 +16,11 @@ impl Datetime {
     }
     pub fn as_sql(&self) -> String {
         match *self {
-            Datetime(y, m, d, 0, 0, 0, 0) => format!("{:04}-{:02}-{:02}", y, m, d),
-            Datetime(year, month, day, hour, minute, second, 0) => format!(
-                "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
-                year, month, day, hour, minute, second
-            ),
+            // Datetime(y, m, d, 0, 0, 0, 0) => format!("{:04}-{:02}-{:02}", y, m, d),
+            // Datetime(year, month, day, hour, minute, second, 0) => format!(
+            //     "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+            //     year, month, day, hour, minute, second
+            // ),
             Datetime(year, month, day, hour, minute, second, micros) => format!(
                 "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:06}",
                 year, month, day, hour, minute, second, micros
