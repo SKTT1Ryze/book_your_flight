@@ -172,8 +172,7 @@ impl<'s> AppScenes<'s> {
                     };
                     passenger.insert(db, "passengers").expect("failed to insert to database");
                 }
-                
-                println!("select ret: {:?}", select_ret);
+                                
                 println!("id card: {}", id_card);
                 println!("name: {}", name);
                 println!("password: {}", password);
