@@ -53,13 +53,13 @@ impl SqlEntry for Passenger {
 #[derive(PartialEq, Eq, Debug)]
 pub struct BookedRecord {
     /// 记录编号
-    id: usize,
+    pub id: usize,
     /// 旅客身份证
-    pid_card: usize,
+    pub pid_card: usize,
     /// 航班编号
-    flight_id: usize,
+    pub flight_id: usize,
     /// 预定状态
-    state: BookdedState
+    pub state: BookdedState
 }
 
 impl SqlEntry for BookedRecord {

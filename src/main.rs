@@ -333,6 +333,29 @@ impl<'s> AppScenes<'s> {
             // todo: 显示该用户的机票预定信息
             unsafe {
                 if let Some(user_id) = USER {
+                    let mut db = DB.lock().unwrap();
+                    let select_ret = db.query_map(
+                        format!("select * from booked_records where pid_card = {}", user_id),
+                        |(id, pid_card, flight_id, state)| {
+                            let state = match state {
+                                0 => passenger::BookdedState::NotPaied,
+                                1 => passenger::BookdedState::PaiedNotFinished,
+                                2 => passenger::BookdedState::Finished,
+                                _ => panic!("unknown state value!")
+                            };
+                            passenger::BookedRecord {
+                                id,
+                                pid_card,
+                                flight_id,
+                                state
+                            }
+                        }
+                    ).expect("failed to select from database");
+                    for r in select_ret {
+                        ui.label(format!("booked id: {}", r.id));
+                        ui.label(format!("flight id: {}", r.flight_id));
+                        ui.label(format!("state: {:?}", r.state));
+                    }
                     
                 }
             }
