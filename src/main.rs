@@ -12,6 +12,8 @@ use bevy::{ecs::ResourceRefMut, prelude::*};
 use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
 use frontend::scene::{Scenes, Scene, ShowF};
 use frontend::state::StateMachine;
+use backend::*;
+use mysql::prelude::FromRow;
 use mysql::{Pool, PooledConn, prelude::Queryable};
 use config::*;
 
@@ -54,6 +56,11 @@ fn setup_system(world: &mut World, res: &mut Resources) {
     let asset_server = res.get::<AssetServer>().expect("failed to get asset server");
     let handle = asset_server.load("branding/icon.png");
     egui_ctx.set_egui_texture(BEVY_TEXTURE_ID, handle);
+    // 在数据库中建表
+    let mut db = DB.lock().unwrap();
+    create_flights_table(&mut db, "flights").expect("failed to create flights table");
+    create_passengers_table(&mut db, "passengers").expect("failed to create passengers table");
+    create_booked_records_table(&mut db, "booked_records").expect("failed to create booked records table");
 }
 
 fn update_ui_scale_factor(mut egui_settings: ResMut<EguiSettings>, wins: Res<Windows>) {
@@ -150,6 +157,23 @@ impl<'s> AppScenes<'s> {
             let name = b.get("name").unwrap();
             let password = b.get("password").unwrap();
             button_alpha!(ui, s, "registered", 3, |db: &mut PooledConn| {
+                if !sql_select(db, "passengers", |(id_card, name, password)| {
+                    passenger::Passenger {
+                        id_card, name, password
+                    }
+                }, format!("where id_card = {}", &id_card).as_str()).is_empty() {
+                    println!("id card already in use!");
+                } else {
+                    let id = id_card.parse::<usize>().unwrap();
+                    let passenger = passenger::Passenger {
+                        id_card: id,
+                        name: name.clone(),
+                        password: password.clone()
+                    };
+                    passenger.insert(db, "passengers").expect("failed to insert to database");
+                }
+                
+                println!("select ret: {:?}", select_ret);
                 println!("id card: {}", id_card);
                 println!("name: {}", name);
                 println!("password: {}", password);
@@ -195,6 +219,7 @@ impl<'s> AppScenes<'s> {
                     );
                 });    
             }
+            
             button!(ui, s, "unsubscribe", 3);
             button!(ui, s, "pay", 4);
             button!(ui, s, "back", 5);
@@ -350,3 +375,14 @@ macro_rules! scene {
             )
     };
 }
+
+fn sql_select<S: AsRef<str>, T: FromRow, F: FnMut(T) -> U, U>(
+    db: &mut PooledConn, tb_name: S, closure: F, constraint: S
+) -> Vec<U> {
+        let query = format!(
+            r#"select * from {} {}"#,
+            tb_name.as_ref(),
+            constraint.as_ref()
+        );
+        db.query_map(query, closure).expect("failed to select from database")
+    }

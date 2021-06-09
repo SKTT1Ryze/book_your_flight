@@ -26,14 +26,14 @@
 
 
 
-mod flight;
-mod passenger;
-mod time;
+pub mod flight;
+pub mod passenger;
+pub mod time;
 mod table;
 
 use mysql::PooledConn;
 
-
+pub use table::*;
 /// Sql trait 统一抽象各种数据库数据
 pub trait SqlEntry: Sized {
     /// 插入一行记录到数据库

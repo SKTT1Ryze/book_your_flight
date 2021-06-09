@@ -78,7 +78,8 @@ pub fn create_passengers_table(db: &mut PooledConn, tb_name: &str) -> mysql::Res
         tb_name,
         r"create temporary table {} (
             id_card int not null,
-            name char(20) not null
+            name char(20) not null,
+            password char(20) not null
         )
         "
     );

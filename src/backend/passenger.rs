@@ -5,11 +5,11 @@ use super::SqlEntry;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Passenger {
     /// 身份证
-    id_card: usize,
+    pub id_card: usize,
     /// 姓名
-    name: String,
+    pub name: String,
     /// 密码
-    password: String,
+    pub password: String,
 }
 
 impl SqlEntry for Passenger {
