@@ -39,6 +39,8 @@ lazy_static::lazy_static! {
     };
 }
 
+static mut USER: Option<usize> = None;
+
 fn main() {
     App::build()
         .add_resource(AppScenes::init())
@@ -128,7 +130,7 @@ impl<'s> AppScenes<'s> {
                     no_err = false;
                     0
                 });
-                let stime = str_to_time(flight_price).unwrap_or_else(|_e| {
+                let stime = str_to_time(flight_stime).unwrap_or_else(|_e| {
                     no_err = false;
                     (0, 0, 0, 0)
                 });
@@ -136,6 +138,10 @@ impl<'s> AppScenes<'s> {
                     no_err = false;
                     0
                 });
+                if flight_type.is_empty() {
+                    println!("mtype is empty");
+                    no_err = false;
+                }
                 if no_err {
                     let t = time::Datetime::new(2021, stime.0, stime.1, stime.2, stime.3, 0, 0);
                     // 输入一切正确
@@ -252,6 +258,10 @@ impl<'s> AppScenes<'s> {
                 }
             });
             button_alpha!(ui, s, "login", 4, |db: &mut PooledConn| {
+                if id_card.is_empty() || name.is_empty() || password.is_empty() {
+                    println!("id card or name or password is empty");
+                    return false;
+                }
                 // 查询数据库里面是否有相应的记录
                 let mut select_ret = sql_select(db, "passengers", |(id_card, name, password)| {
                     passenger::Passenger {
@@ -266,6 +276,8 @@ impl<'s> AppScenes<'s> {
                     let ret = select_ret.pop().unwrap();
                     if ret.name == *name && ret.password == *password {
                         println!("successfully login");
+                        let id = id_card.parse::<usize>().unwrap();
+                        unsafe { USER = Some(id); }
                         return true;
                     } else {
                         println!("name or password error");
@@ -294,7 +306,15 @@ impl<'s> AppScenes<'s> {
             button_alpha!(ui, s, "search", 3, |db: &mut PooledConn| {
                 let s_time = b.get("stime").unwrap();
                 let e_time = b.get("etime").unwrap();
-                println!("stime: {}, etime: {}", s_time, e_time);
+                let mut no_err = true;
+                let stime = str_to_time(s_time).unwrap_or_else(|_e| {
+                    no_err = false;
+                    (0, 0, 0, 0)
+                });
+                let etime = str_to_time(e_time).unwrap_or_else(|_e| {
+                    no_err = false;
+                    (0, 0, 0, 0)
+                });
                 true
             });
             button!(ui, s, "back", 4);
@@ -310,7 +330,12 @@ impl<'s> AppScenes<'s> {
                     );
                 });    
             }
-            
+            // todo: 显示该用户的机票预定信息
+            unsafe {
+                if let Some(user_id) = USER {
+                    
+                }
+            }
             button!(ui, s, "unsubscribe", 3);
             button!(ui, s, "pay", 4);
             button!(ui, s, "back", 5);
@@ -481,7 +506,7 @@ fn sql_select<S: AsRef<str>, T: FromRow, F: FnMut(T) -> U, U>(
 
 // month, day, hour, minute
 fn str_to_time<S: AsRef<str>>(s: S) -> std::result::Result<(u8, u8, u8, u8), ()> {
-    let mut s = String::from(s.as_ref());
+    let s = String::from(s.as_ref());
     let split_ret: Vec<&str> = s.split('-').collect();
     if split_ret.len() < 4 {
         Err(())
