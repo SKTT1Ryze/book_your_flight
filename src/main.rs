@@ -53,7 +53,7 @@ fn main() {
         .run();
 }
 
-fn setup_system(world: &mut World, res: &mut Resources) {
+fn setup_system(_world: &mut World, res: &mut Resources) {
     let mut egui_ctx = res.get_mut::<EguiContext>().expect("failed to get egui context");
     let asset_server = res.get::<AssetServer>().expect("failed to get asset server");
     let handle = asset_server.load("branding/icon.png");
@@ -64,6 +64,20 @@ fn setup_system(world: &mut World, res: &mut Resources) {
     create_seats_table(&mut db, "seats").expect("failed to create seats table");
     create_passengers_table(&mut db, "passengers").expect("failed to create passengers table");
     create_booked_records_table(&mut db, "booked_records").expect("failed to create booked records table");
+    let booked_record = passenger::BookedRecord {
+        id: 0,
+        pid_card: 1,
+        flight_id: 2,
+        state: passenger::BookdedState::NotPaied
+    };
+    booked_record.insert(&mut db, "booked_records").unwrap();
+    let booked_record = passenger::BookedRecord {
+        id: 1,
+        pid_card: 1,
+        flight_id: 3,
+        state: passenger::BookdedState::NotPaied
+    };
+    booked_record.insert(&mut db, "booked_records").unwrap();
 }
 
 fn update_ui_scale_factor(mut egui_settings: ResMut<EguiSettings>, wins: Res<Windows>) {
@@ -73,7 +87,7 @@ fn update_ui_scale_factor(mut egui_settings: ResMut<EguiSettings>, wins: Res<Win
 }
 
 fn ui_menu(
-    world: &mut World,
+    _world: &mut World,
     res: &mut Resources,
 ) {
     let mut egui_ctx = res.get_mut::<EguiContext>().expect("faild to get egui context");
@@ -98,7 +112,7 @@ impl<'s> AppScenes<'s> {
         
         show!(TopPanel, top_show_f, |ui| {
             ui.heading("book your flight!");
-        }, s: &mut StateMachineRef);
+        }, _s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f0, |ui| {
             let mut b = INPUTBOX.lock().unwrap();
@@ -322,15 +336,6 @@ impl<'s> AppScenes<'s> {
 
         show!(CentralPanel, center_show_f5, |ui| {
             let mut b = INPUTBOX.lock().unwrap();
-            for k in INPUTBOX_KEY[4].iter() {
-                ui.horizontal(|ui| {
-                    ui.label(*k);
-                    ui.text_edit_singleline(
-                        b.get_mut(k).unwrap()
-                    );
-                });    
-            }
-            // todo: 显示该用户的机票预定信息
             unsafe {
                 if let Some(user_id) = USER {
                     let mut db = DB.lock().unwrap();
@@ -359,8 +364,39 @@ impl<'s> AppScenes<'s> {
                     
                 }
             }
-            button!(ui, s, "unsubscribe", 3);
-            button!(ui, s, "pay", 4);
+            for k in INPUTBOX_KEY[4].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });    
+            }
+            let handle_id = b.get("handled-id").unwrap();
+            button_alpha!(ui, s, "unsubscribe", 3, |db: &mut PooledConn| {
+                // 要处理的航班 id
+                if let Ok(id) = handle_id.parse::<usize>() {
+                    // todo: 检查输入，表中是否与之相应的记录
+                    db.query_drop(
+                        format!("delete from booked_records where id = {}", id)
+                    ).expect("failed to delete entry in database");
+                    println!("delete entry from booked_records");
+                    return true
+                } else {
+                    return false
+                }
+            });
+            button_alpha!(ui, s, "pay", 4, |db: &mut PooledConn| {
+                if let Ok(id) = handle_id.parse::<usize>() {
+                    db.query_drop(
+                        format!("update booked_records set state = 1 where id = {}", id)
+                    ).expect("failed to update entry in database");
+                    println!("update entry from booked_records");
+                    return true
+                } else {
+                    return false
+                }
+            });
             button!(ui, s, "back", 5);
         }, s: &mut StateMachineRef);
 
