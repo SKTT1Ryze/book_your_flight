@@ -66,13 +66,13 @@ impl SqlEntry for Flight {
 #[derive(PartialEq, Eq, Debug)]
 pub struct SeatInfo {
     /// 座位编号
-    id: usize,
+    pub id: usize,
     /// 所属航班编号
-    flight_id: usize,
+    pub flight_id: usize,
     /// 排号，座位号，比如 11A
-    location: (usize, String),
+    pub location: (usize, String),
     /// 是否已经被预定
-    is_booked: bool
+    pub is_booked: bool
 }
 
 

@@ -59,6 +59,7 @@ fn setup_system(world: &mut World, res: &mut Resources) {
     // 在数据库中建表
     let mut db = DB.lock().unwrap();
     create_flights_table(&mut db, "flights").expect("failed to create flights table");
+    create_seats_table(&mut db, "seats").expect("failed to create seats table");
     create_passengers_table(&mut db, "passengers").expect("failed to create passengers table");
     create_booked_records_table(&mut db, "booked_records").expect("failed to create booked records table");
 }
@@ -108,15 +109,49 @@ impl<'s> AppScenes<'s> {
                 });
             }
             button_alpha!(ui, s, "confirm", 3, |db: &mut PooledConn| {
+                let mut no_err = true;
                 let flight_id = b.get("flight-id").unwrap();
                 let flight_type = b.get("type").unwrap();
                 let flight_stime = b.get("flight-stime").unwrap();
                 let flight_ftime = b.get("flight-ftime").unwrap();
                 let flight_capacity = b.get("capacity").unwrap();
-                let filght_price = b.get("price").unwrap();
-                println!("id: {}, type: {}", flight_id, flight_type);
-                println!("stime: {}, ftime: {}", flight_stime, flight_ftime);
-                println!("capacity: {}, price: {}", flight_capacity, filght_price);
+                let flight_price = b.get("price").unwrap();
+                let id = flight_id.parse::<usize>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                let capacity = flight_capacity.parse::<u32>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                let price = flight_price.parse::<u32>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                let stime = str_to_time(flight_price).unwrap_or_else(|_e| {
+                    no_err = false;
+                    (0, 0, 0, 0)
+                });
+                let ftime = flight_ftime.parse::<u32>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                if no_err {
+                    let t = time::Datetime::new(2021, stime.0, stime.1, stime.2, stime.3, 0, 0);
+                    // 输入一切正确
+                    let flight = flight::Flight {
+                        id,
+                        mtype: flight_type.clone(),
+                        stime: t.as_sql(),
+                        ftime,
+                        capacity,
+                        price
+                    };
+                    // 插入数据库
+                    flight.insert(db, "flights").expect("failed to insert to database");
+                    println!("succeed in inserting to table flights");
+                }
+                no_err
             });
             
         }, s: &mut StateMachineRef);
@@ -137,9 +172,37 @@ impl<'s> AppScenes<'s> {
                 let row = b.get("row").unwrap();
                 let column = b.get("column").unwrap();
                 let is_booked = b.get("is-booked").unwrap();
-                println!("seat id: {}, flight id: {}", seat_id, seat_flight_id);
-                println!("row: {}, column: {}", row, column);
-                println!("is booked: {}", is_booked);
+                let mut no_err = true;
+                let id = seat_id.parse::<usize>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                let flight_id = seat_flight_id.parse::<usize>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                let row = row.parse::<usize>().unwrap_or_else(|_e| {
+                    no_err = false;
+                    0
+                });
+                let column = column.chars().next().unwrap_or_else(|| {
+                    no_err = false;
+                    'A'
+                });
+                if !matches!(is_booked.as_str(), "yes" | "no") {
+                    no_err = false;
+                }
+                if no_err {
+                    let seat = flight::SeatInfo {
+                        id,
+                        flight_id,
+                        location: (row, column.to_string()),
+                        is_booked: matches!(is_booked.as_str(), "yes")       
+                    };
+                    seat.insert(db, "seats").expect("failed to insert to database");
+                    println!("succeed in inserting to table seats");
+                }
+                no_err
             });
         }, s: &mut StateMachineRef);
 
@@ -162,25 +225,53 @@ impl<'s> AppScenes<'s> {
                         id_card, name, password
                     }
                 }, format!("where id_card = {}", &id_card).as_str()).is_empty() {
+                    // id card 已经存在
                     println!("id card already in use!");
+                    return false;
                 } else {
-                    let id = id_card.parse::<usize>().unwrap();
-                    let passenger = passenger::Passenger {
-                        id_card: id,
-                        name: name.clone(),
-                        password: password.clone()
-                    };
-                    passenger.insert(db, "passengers").expect("failed to insert to database");
+                    // 插入数据库
+                    let mut no_err = true;
+                    let id = id_card.parse::<usize>().unwrap_or_else(|_e| {
+                        no_err = false;
+                        0
+                    });
+                    if name.is_empty() || password.is_empty() {
+                        println!("name or password is empty");
+                        no_err = false;
+                    }
+                    if no_err {
+                        let passenger = passenger::Passenger {
+                            id_card: id,
+                            name: name.clone(),
+                            password: password.clone()
+                        };
+                        passenger.insert(db, "passengers").expect("failed to insert to database");
+                        println!("succeed in inserting to table passengers");
+                    }
+                    return no_err;
                 }
-                                
-                println!("id card: {}", id_card);
-                println!("name: {}", name);
-                println!("password: {}", password);
             });
             button_alpha!(ui, s, "login", 4, |db: &mut PooledConn| {
-                println!("id card: {}", id_card);
-                println!("name: {}", name);
-                println!("password: {}", password);
+                // 查询数据库里面是否有相应的记录
+                let mut select_ret = sql_select(db, "passengers", |(id_card, name, password)| {
+                    passenger::Passenger {
+                        id_card, name, password
+                    }
+                }, format!("where id_card = {}", &id_card).as_str());
+                if select_ret.is_empty() {
+                    // 没有相应记录
+                    println!("no such id card");
+                    return false;
+                } else {
+                    let ret = select_ret.pop().unwrap();
+                    if ret.name == *name && ret.password == *password {
+                        println!("successfully login");
+                        return true;
+                    } else {
+                        println!("name or password error");
+                        return false;
+                    }
+                }
             });
         }, s: &mut StateMachineRef);
 
@@ -204,6 +295,7 @@ impl<'s> AppScenes<'s> {
                 let s_time = b.get("stime").unwrap();
                 let e_time = b.get("etime").unwrap();
                 println!("stime: {}, etime: {}", s_time, e_time);
+                true
             });
             button!(ui, s, "back", 4);
         }, s: &mut StateMachineRef);
@@ -343,10 +435,11 @@ macro_rules! button_alpha {
     ($ui:expr, $s:expr, $name:expr, $input:expr, $closure:expr) => {
         if $ui.button($name).clicked() {
             let mut db = DB.lock().unwrap();
-            $closure(&mut db);
-            let curr_state = $s.current_state();
-            if let Some(next_state) = $s.state_transfer($input) {
-                println!("state conversion: {} -> {}", curr_state, next_state);
+            if $closure(&mut db) {
+                let curr_state = $s.current_state();
+                if let Some(next_state) = $s.state_transfer($input) {
+                    println!("state conversion: {} -> {}", curr_state, next_state);
+                }
             }
         }
     }
@@ -378,10 +471,31 @@ macro_rules! scene {
 fn sql_select<S: AsRef<str>, T: FromRow, F: FnMut(T) -> U, U>(
     db: &mut PooledConn, tb_name: S, closure: F, constraint: S
 ) -> Vec<U> {
-        let query = format!(
-            r#"select * from {} {}"#,
-            tb_name.as_ref(),
-            constraint.as_ref()
-        );
-        db.query_map(query, closure).expect("failed to select from database")
+    let query = format!(
+        r#"select * from {} {}"#,
+        tb_name.as_ref(),
+        constraint.as_ref()
+    );
+    db.query_map(query, closure).expect("failed to select from database")
+}
+
+// month, day, hour, minute
+fn str_to_time<S: AsRef<str>>(s: S) -> std::result::Result<(u8, u8, u8, u8), ()> {
+    let mut s = String::from(s.as_ref());
+    let split_ret: Vec<&str> = s.split('-').collect();
+    if split_ret.len() < 4 {
+        Err(())
+    } else {
+        let mut ret = Vec::new();
+        for s in split_ret.iter() {
+            if let Ok(d) = s.parse::<u8>() {
+                ret.push(d);
+            } else {
+                return Err(());
+            }
+        }
+        Ok((
+            ret[0], ret[1], ret[2], ret[3]
+        ))
     }
+}
