@@ -19,7 +19,7 @@ where
 }
 
 impl<I: Eq + Hash + Copy> StateMachine<I, STATE_NUM> {
-    pub fn unused() -> Self {
+    pub fn _unused() -> Self {
         let states = [
             State::default(), State::default(), State::default(), State::default(),
             State::default(), State::default(), State::default()

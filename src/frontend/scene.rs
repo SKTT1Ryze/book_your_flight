@@ -82,7 +82,7 @@ impl<'s> Default for Scene<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, S
         fn left_show_f(
             left_panel: SidePanel,
             ctx: &CtxRef,
-            state_machine: &mut ResourceRefMut<StateMachine<usize, STATE_NUM>>
+            _state_machine: &mut ResourceRefMut<StateMachine<usize, STATE_NUM>>
         ) -> InnerResponse<()> {
             // todo: handle state machine
             left_panel.show(ctx, |ui| {
@@ -92,7 +92,7 @@ impl<'s> Default for Scene<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, S
         fn top_show_f(
             top_panel: TopPanel,
             ctx: &CtxRef,
-            state_machine: &mut ResourceRefMut<StateMachine<usize, STATE_NUM>>
+            _state_machine: &mut ResourceRefMut<StateMachine<usize, STATE_NUM>>
         ) -> InnerResponse<()> {
             top_panel.show(ctx, |ui| {
                 ui.heading("Top Panel");
@@ -101,7 +101,7 @@ impl<'s> Default for Scene<&'s str, ShowF<SidePanel, ()>, ShowF<TopPanel, ()>, S
         fn center_show_f(
             center_panel: CentralPanel,
             ctx: &CtxRef,
-            state_machine: &mut ResourceRefMut<StateMachine<usize, STATE_NUM>>
+            _state_machine: &mut ResourceRefMut<StateMachine<usize, STATE_NUM>>
         ) -> InnerResponse<()> {
             center_panel.show(ctx, |ui| {
                 ui.heading("Center Panel");

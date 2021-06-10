@@ -9,7 +9,7 @@ mod config;
 use std::collections::HashMap;
 use std::sync::{Mutex, Arc};
 use bevy::{ecs::ResourceRefMut, prelude::*};
-use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{self, CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
+use bevy_egui::{EguiContext, EguiPlugin, EguiSettings, egui::{CentralPanel, CtxRef, InnerResponse, SidePanel, TopPanel}};
 use frontend::scene::{Scenes, Scene, ShowF};
 use frontend::state::StateMachine;
 use backend::*;
@@ -23,7 +23,8 @@ lazy_static::lazy_static! {
         vec!["seat-id", "seat-flight-id", "row", "column", "is-booked"],
         vec!["id-card", "name", "password"],
         vec!["stime", "etime"],
-        vec!["handled-id"]
+        vec!["handled-id"],
+        vec!["book-id"]
         ];
     static ref INPUTBOX: Arc<Mutex<HashMap<&'static str, String>>> = {
         let mut h = HashMap::new();
@@ -317,37 +318,7 @@ impl<'s> AppScenes<'s> {
                     );
                 });   
             }
-            button_alpha!(ui, s, "search", 3, |db: &mut PooledConn| {
-                let s_time = b.get("stime").unwrap();
-                let e_time = b.get("etime").unwrap();
-                let mut no_err = true;
-                let stime = str_to_time(s_time).unwrap_or_else(|_e| {
-                    no_err = false;
-                    (0, 0, 0, 0)
-                });
-                let etime = str_to_time(e_time).unwrap_or_else(|_e| {
-                    no_err = false;
-                    (0, 0, 0, 0)
-                });
-                if no_err {
-                    // 最早起飞时间
-                    let start = time::Datetime::new(2021, stime.0, stime.1, stime.2, stime.3, 0, 0).as_sql();
-                    // 最晚起飞时间
-                    let end = time::Datetime::new(2021, etime.0, etime.1, etime.2, etime.3, 0, 0).as_sql();
-                    let select_ret = sql_select(db, "flights", |(id, mtype, stime, ftime, capacity, price)| {
-                        flight::Flight {
-                            id,
-                            mtype,
-                            stime,
-                            ftime,
-                            capacity,
-                            price
-                        }
-                    }, format!("where stime >= '{}' and stime <= '{}'", start, end).as_str());
-                    println!("found ret: {:?}", select_ret);
-                }
-                no_err
-            });
+            button!(ui, s, "search", 3);
             button!(ui, s, "back", 4);
         }, s: &mut StateMachineRef);
 
@@ -418,7 +389,59 @@ impl<'s> AppScenes<'s> {
         }, s: &mut StateMachineRef);
 
         show!(CentralPanel, center_show_f6, |ui| {
-            button!(ui, s, "book", 3);
+            let mut b = INPUTBOX.lock().unwrap();
+            let s_time = b.get("stime").unwrap();
+            let e_time = b.get("etime").unwrap();
+            if let Ok(stime) = str_to_time(s_time) {
+                if let Ok(etime) = str_to_time(e_time) {
+                    let mut db = DB.lock().unwrap();
+                    let start = time::Datetime::new(2021, stime.0, stime.1, stime.2, stime.3, 0, 0).as_sql();
+                    // 最晚起飞时间
+                    let end = time::Datetime::new(2021, etime.0, etime.1, etime.2, etime.3, 0, 0).as_sql();
+                    let select_ret = sql_select(&mut db, "flights", |(id, mtype, stime, ftime, capacity, price)| {
+                        flight::Flight {
+                            id,
+                            mtype,
+                            stime,
+                            ftime,
+                            capacity,
+                            price
+                        }
+                    }, format!("where stime >= '{}' and stime <= '{}'", start, end).as_str());
+                    // println!("found ret: {:?}", select_ret);
+                    for ret in select_ret {
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                format!("id: {}, stime: {}, ftime: {}, price: {}", ret.id, ret.stime, ret.ftime, ret.price)
+                            );
+                        });
+                    }    
+                }
+            }
+            for k in INPUTBOX_KEY[5].iter() {
+                ui.horizontal(|ui| {
+                    ui.label(*k);
+                    ui.text_edit_singleline(
+                        b.get_mut(k).unwrap()
+                    );
+                });   
+            }
+            button_alpha!(ui, s, "book", 3, |db: &mut PooledConn| {
+                let book_id = b.get("book-id").unwrap();
+                if let Ok(id) = book_id.parse::<usize>() {
+                    // todo: 修改 booked_records 表，seats
+                    let booked_record = passenger::BookedRecord {
+                        id: 0,
+                        pid_card: unsafe { USER.unwrap() },
+                        flight_id: id,
+                        state: passenger::BookdedState::NotPaied
+                    };
+                    booked_record.insert(db, "booked_records").expect("failed to insert to database");
+                    true
+                } else {
+                    false
+                }
+            });
             button!(ui, s, "back", 4);
         }, s: &mut StateMachineRef);
 
