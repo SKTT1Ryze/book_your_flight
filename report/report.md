@@ -1008,10 +1008,59 @@ impl SqlEntry for BookedRecord {
 ```
 
 ### 系统测试
-在本项目中的开发过程中，作者写了许多单元测试，这些单元测试起到一定的代码正确性检查作用：  
+#### 单元测试
+在本项目中的开发过程中，作者写了许多单元测试，这些单元测试起到一定的代码正确性检查作用，比如：  
 ```Rust
-
+// 测试是否可以成功插入乘客信息表和从乘客信息表中进行选择运算
+#[test]
+fn passenger_test() -> mysql::Result<()> {
+    use mysql::Pool;
+    let url = "mysql://sktt1ryze:WXZFwxzf123@localhost/test_db";
+    let pool = Pool::new(url)?;
+    let mut conn = pool.get_conn()?;
+    conn.query_drop(
+        r"
+            create temporary table passengers (
+                id_card int not null,
+                name char(20) not null,
+                password char(20) not null
+            )
+        "
+    )?;
+    let passenger = Passenger {
+        id_card: 0,
+        name: "ccc".to_string(),
+        password: "testpassword".to_string()
+    };
+    passenger.insert(&mut conn, "passengers")?;
+    let new_passenger = Passenger::select(&mut conn, "passengers", 0)?;
+    assert_eq!(passenger, new_passenger);
+    Ok(())
+}
 ```
+
+在代码源文件中写好单元测试后，在终端里面输入：  
+```bash
+cargo test
+```
+
+即可自动运行单元测试，并显示结果:  
+```
+todo
+```
+
+#### 综合测试
+
+添加航班信息：  
+添加座位信息：  
+乘客注册和登录：  
+乘客预定航班：  
+todo：...  
+
+
 ### 系统设计与实现总结
+由于时间限制，系统整体的设计并不是那么地恰当，实现的功能比较有限，在实现中某些细节的处理也并不是那么完美，希望将来如果有时间把这些缺点改进一下，做出一个好点的成品出来。  
 
 ## 课程总结
+到目前为止数据库系统原理的理论课和实验课都已经结束，通过这门课我初步了解了数据库系统的原理，编程方法和实现方法，并在本实践课上动手实践，学会了使用 sql 语句去对数据库进行增删查改等常见操作，同时还设计并实现了一个简单的数据库应用系统，锻炼了代码能力。  
+大学本科的学校生涯到此基本结束，后会有期。  
