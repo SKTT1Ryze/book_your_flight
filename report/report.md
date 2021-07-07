@@ -1,4 +1,4 @@
-# 华中科技大学计算机学院数据库系统实验
+<!-- # 华中科技大学计算机学院数据库系统实验 -->
 
 ## 课程任务概述
 本实验课程建立在数据库系统原理理论课的基础上，从浅到深建立了若干个实践任务，旨在通过实践过程让我们体会数据库系统给开发环境带来的便利和功能，同时巩固在课堂上接收的理论知识。  
@@ -13,7 +13,65 @@
 
 
 ### 完成过程
+#### 数据库备份
+Linux 平台下 mysql 备份操作命令格式：  
+```bash
+mysqldump -h主机名  -P端口 -u用户名 -p密码 –database 数据库名 > 文件名.sql
+```
+
+本机上已经创建了一个测试用数据库 `test_db`，下面对其进行备份。  
+
+备份数据库为带删除表的格式：  
+```bash
+mysqldump -hlocalhost -uroot  -p***** -database test_db > test_db.sql
+```
+
+结果：  
+![backup](./img/backup.png)  
+
+同时还可以服务器上所有的数据库：  
+```bash
+mysqldump -all-databases > ball_backup.sql
+```
+
+导入数据库：  
+常用 source 命令，用 use 进入某个数据库，运行：  
+```bash
+mysql> source /path/to/backup.sql
+```
+
+#### 数据库创建用户并配置权限
+Linux 平台下创建用户命令格式：  
+```bash
+create user 'username'@'host' identified by 'password';
+```
+说明：  
+* username：将创建的用户名
+* host：指定该用户在哪个主机上可以登录
+* password：该用户的登陆密码
+
+下面创建用户 `faker`:  
+```sql
+create user 'faker'@'localhost'
+```
+
+![create_user](./img/ceate_user.png)  
+
+下面以 `faker` 用户登录 mysql:  
+```bash
+mysql -ufaker -p
+```
+![login](./img/login.png)  
+
+给 `faker` 用户授予 `test_db` 的权限：  
+```sql
+grant privileges on test_db to 'faker'@'localhost';
+```
+
 ### 任务总结
+数据库备份用于数据库恢复过程，当发生系统故障的时候，可以通过数据库备份文件和日志文件恢复到发生故障之前的状态。  
+用户权限保证了数据库的一部分安全性，防止非法用户对数据库进行恶意破坏，这对于系统安全来说是不可缺失的一部分。  
+通过本次任务，我熟悉了 Linux 平台下数据库备份和创建用户的基本操作，为后面的数据库应用系统设计与实现打下了基础。  
 
 ## SQL 练习
 ### 任务要求
@@ -95,7 +153,7 @@ use covid19mon;
 /* *********************************************************** */
 ```
 结果如下:  
-![create_table](create_table.png)  
+![create_table](./img/create_table.png)  
 
 #### 表的更新
 数据插入：  
@@ -133,7 +191,8 @@ update person set telephone="13607176668" where id=1;
 /* the end of your code */
 ```
 
-结果：todo  
+结果如下：  
+![update_table](./img/update_table.png)  
 
 #### 数据查询
 人流量大于 30 的地点：  
@@ -472,6 +531,9 @@ where
 /*  end  of  your code  */
 ```
 
+结果如下：  
+![select_table](./img/select_table.png)  
+
 #### 创建触发器
 隔离点的人员“确诊新冠”后，自动转院：  
 ```sql
@@ -518,7 +580,10 @@ end;;
 DELIMITER ;
 
 ```
-结果：todo  
+
+结果如下：  
+![create_trigger](./img/create_trigger.png)  
+
 #### 创建函数
 ```sql
 /*
@@ -554,7 +619,6 @@ where
 order by id;
 ```
 
-结果：todo  
 ### 任务总结
 通过以上练习，我初步熟悉了 sql 语法，并结合实际例子了解了 sql 语句的应用场景，并知道了一般的 sql 查询语句的写法，为后面的数据库应用系统实现打好了基础。  
 
@@ -1045,20 +1109,34 @@ cargo test
 ```
 
 即可自动运行单元测试，并显示结果:  
-```
-todo
-```
+![cargo_test](./img/cargo_test.png)  
 
 #### 综合测试
+整体 UI 界面：  
+![ui](./img/ui.png)  
 
 添加航班信息：  
+![add_flight](./img/add_flight.png)  
 添加座位信息：  
+![add_seat](./img/add_seat.png)  
 乘客注册和登录：  
-乘客预定航班：  
-todo：...  
+![register](./img/register.png)  
+![passenger_login](./img/passenger_login.png)  
+乘客根据一个时间区间搜索航班：  
+![search](./img/search.png)  
+搜索结果：  
+![search_res](./img/search_res.png)  
+预定，然后返回一级，点击 `unsubscribe or pay` 按钮，查看已经预定的航班：  
+![booked](./img/booked.png)  
+输入想要处理的航班编号，若想要退订，点击 `unsubscribe` 按钮，可以发现航班记录消失了：  
+![unsubscribe](./img/unsubscribe.png)  
+如果想要支付，则点击 `pay` 按钮，可以看到航班状态从 `Notpaied` 变成了 `PaiedNotFinished`：  
+![pay](./img/pay.png)  
 
+以上就是该机票预定系统的基本功能，经过多次测试，系统运行基本正常。  
 
 ### 系统设计与实现总结
+该项目从数据库部分到图形界面部分都是基于 Rust 语言进行开发。Rust 语言作为新时代的系统编程语言，得益于自身独特的内存管理机制提供的安全，高性能特性，正在各种系统软件领域发挥着重要的作用。同时 Rust 作为一门编程语言而言的表现力十分丰富，减少了许多开发者的负担。不远的将来系统编程必是 Rust 的世界。  
 由于时间限制，系统整体的设计并不是那么地恰当，实现的功能比较有限，在实现中某些细节的处理也并不是那么完美，希望将来如果有时间把这些缺点改进一下，做出一个好点的成品出来。  
 
 ## 课程总结
