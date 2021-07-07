@@ -1,2 +1,4 @@
 # book_your_flight
-Flights booking database system
+DataBase system lab for HUST CS major.  
+机票预定系统  
+
